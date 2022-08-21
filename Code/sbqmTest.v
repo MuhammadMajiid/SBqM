@@ -1,249 +1,96 @@
 `timescale 1s/1s
-module sbqmTest
-();
+module sbqmTest();
+
+//Inputs drivers
 reg Tsensor_start, Tsensor_end, TRESET;
 reg [1:0] TTellers_count;
+
+//Output Arguments
 wire TFull_flag, TEmpty_flag;
 wire [2:0] TPeople_count;
 wire [4:0] TWaitTime;
 
+//Design instatiation
 SBqM test(
-    .sensor_start(Tsensor_start),
-    .sensor_end(Tsensor_end),
-    .RESET(TRESET),
-    .Tellers_count(TTellers_count),
-    .Full_flag(TFull_flag),
-    .Empty_flag(TEmpty_flag),
-    .People_count(TPeople_count),
+    .SenseIn(Tsensor_start),
+    .SenseOut(Tsensor_end),
+    .ResetN(TRESET),
+    .TellerCount(TTellers_count),
+    .FullFlag(TFull_flag),
+    .EmptyFlag(TEmpty_flag),
+    .PeopleCount(TPeople_count),
     .WaitTime(TWaitTime)
 );
+
+//monitoring the inputs and the outputs
 initial begin
-    TRESET = 1'b0; // Empty Flag =1 , pcount =0
+    $monitor($time, "  Outputs: PeopleCount = %d,  FullFlag = %b,  EmptyFlag = %b
+                       Inputs:  TellerCount = %d,   WaitTime = %d,   SenseIn = %b,   SenseOut = %b,  ResetN = %b
+                       ", TPeople_count, TFull_flag, TEmpty_flag, TTellers_count, TWaitTime, Tsensor_start, Tsensor_end, TRESET);
+end
+
+//Resetting the System
+initial begin
+    TRESET = 1'b0;
     Tsensor_end = 1'b1;
     Tsensor_start = 1'b1; 
-    TTellers_count =2'b00;
-
-    //all possible values in case of Tcount= 01 (1)
-
-    #5
+    TTellers_count =2'b01;
+    #5;
     TRESET = 1'b1;
-    TTellers_count = 2'b01;
-    Tsensor_end = 1'b1;
-    Tsensor_start = 1'b1; // stays at zero displaying message that system is ready
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 1
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 2
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 3
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 4
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 5
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 6
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 7
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount stays at 7 with warning message and Full Flag = 1
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 6
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 5
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 4
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 3
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 2
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 1
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 0
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount stays at 0, pops up mesaage indicates that the queue is empty, Empty flag=1 
-    #5
-    TRESET = 1'b0; //resets the system again > Pcount=0, full flag=0, empty flag=1
-    Tsensor_end = 1'b1;
-    Tsensor_start = 1'b1;
-    #5
+end
 
-    //all possible values in case of Tcount= 10 (2)
+//Test
+integer i=0, j=0, k=0;
+initial begin
+    for (i = 1; i < 4; i = i + 1) begin           //for all the possible teller count
+        TTellers_count = i;
+        for (j = 0; j < 9; j = j + 1) begin      //incrementing untill the FullFlag rises
+            Tsensor_start   = 1'b1;
+            #5;
+            Tsensor_start  = 1'b0;
+            #5;
+            if (TFull_flag) begin
+                $display("The queue is full please wait patiently.");  
+            end
+        end
+        Tsensor_start      = 1'b1;
+        for (k = 0; k < 9; k = k + 1) begin     //decrementing untill the EmptyFlag rises
+            Tsensor_end = 1'b1;
+            #5;
+            Tsensor_end = 1'b0;
+            #5;
+            if (TEmpty_flag) begin
+            $display("The queue is empty you can enter now.");
+            end
+        end
+        Tsensor_end        = 1'b1;
+    end
+    Tsensor_start      = 1'b1;
+    Tsensor_end        = 1'b1;
 
-    TRESET = 1'b1;
-    TTellers_count = 2'b10;
-    Tsensor_end = 1'b1;
-    Tsensor_start = 1'b1; // stays at zero displaying message that system is ready
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 1
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 2
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 3
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 4
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 5
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 6
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 7
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount stays at 7 with warning message and Full Flag = 1
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 6
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 5
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 4
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 3
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 2
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 1
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 0
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount stays at 0, pops up mesaage indicates that the queue is empty, Empty flag=1 
-    #5
-    TRESET = 1'b0; //resets the system again > Pcount=0, full flag=0, empty flag=1
-    Tsensor_end = 1'b1;
-    Tsensor_start = 1'b1;
-    #5
+    //Special Case when a customer enters at the same time another leaves
+    #10;
+    Tsensor_start      = 1'b0;
+    Tsensor_end        = 1'b0;
+    #10;
 
-    //all possible values in case of Tcount= 11 (3)
+    //Special Case when a customer enters but stays at the sensor for a long time
+    Tsensor_end        = 1'b1;
+    Tsensor_start      = 1'b1;
+    #10;
+    Tsensor_start      = 1'b0;
+    #20;
 
-    TRESET = 1'b1;
-    TTellers_count = 2'b11;
-    Tsensor_end = 1'b1;
-    Tsensor_start = 1'b1; // stays at zero displaying message that system is ready
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 1
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 2
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 3
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 4
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 5
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 6
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount increments by 1 becomes => 7
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_start = 1'b0; // pcount stays at 7 with warning message and Full Flag = 1
-    #5
-    Tsensor_start = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 6
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 5
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 4
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 3
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 2
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 1
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount decrements by 1 becomes => 0
-    #5
-    Tsensor_end = 1'b1;
-    #5
-    Tsensor_end = 1'b0; // pcount stays at 0, pops up mesaage indicates that the queue is empty, Empty flag=1 
-    #5
-    TRESET = 1'b0; //resets the system again > Pcount=0, full flag=0, empty flag=1
+    //Special Case when a customer leaves but stays at the sensor for a long time
+    Tsensor_start      = 1'b1;
+    Tsensor_end        = 1'b1;
+    #10;
+    Tsensor_end        = 1'b0;
+    #20;
+    Tsensor_end        = 1'b1;
 
 end
+
     
 
 endmodule

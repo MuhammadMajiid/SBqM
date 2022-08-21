@@ -1,15 +1,19 @@
 `timescale 1s/1s
 module SBqM
 (
-    input sensor_start, sensor_end, RESET,
-    input [1:0] Tellers_count,
-    output Full_flag, Empty_flag,
-    output [2:0] People_count=0 ,
+    input SenseIn, SenseOut, ResetN,
+    input [1:0] TellerCount,
+    output FullFlag, EmptyFlag,
+    output [2:0] PeopleCount,
     output [4:0] WaitTime
 );
 
-UDCfsm counter_gate(.sens_front(sensor_start), .sens_back(sensor_end), .rst(RESET), .fflag(Full_flag), .eflag(Empty_flag), .p_count(People_count));
+UDCounter CounterGate(.Up(SenseIn), .Down(SenseOut), .ResetN(ResetN),                //inputs
+                    .FullFlag(FullFlag), .EmptyFlag(EmptyFlag), .Count(PeopleCount)   //outputs
+);
 
-ROM LUT(.TC(Tellers_count), .PC(People_count), .Wtime(WaitTime));
+ROM LUT(.TellerCount(TellerCount), .PeopleCount(PeopleCount),                               //inputs
+        .WaitTime(WaitTime)                                                                 //output
+);
 
 endmodule
